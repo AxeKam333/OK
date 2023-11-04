@@ -19,7 +19,6 @@ double calculateDistance(const Point& p1, const Point& p2) {
 
 vector<Point> greedyTSP(vector<Point> points) {
     vector<Point> tour;
-    int numPoints = points.size();
 
     // Start with the first point as the initial city
     tour.push_back(points[0]);
@@ -27,11 +26,11 @@ vector<Point> greedyTSP(vector<Point> points) {
 
     while (!points.empty()) {
         Point currentCity = tour.back();
-        double minDistance = numeric_limits<double>::max();
-        int closestCityIndex = -1;
+        double minDistance = calculateDistance(currentCity, points[0]);
+        int closestCityIndex = 0;
 
         // Find the closest unvisited city
-        for (int i = 0; i < points.size(); i++) {
+        for (int i = 1; i < points.size(); i++) {
             double distance = calculateDistance(currentCity, points[i]);
             if (distance < minDistance) {
                 minDistance = distance;
@@ -44,8 +43,8 @@ vector<Point> greedyTSP(vector<Point> points) {
         points.erase(points.begin() + closestCityIndex);
     }
 
-    // Return to the starting city to complete the tour
-    tour.push_back(tour[0]);
+    // Return to the starting city to complete the tour (would double with the couts at the end)
+    // tour.push_back(tour[0]);
 
     return tour;
 }
