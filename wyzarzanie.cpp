@@ -10,17 +10,18 @@
 
 using namespace std;
 
-struct Point {
-    double x, y;
+struct City {
+    string name;
+    int x, y;
 };
 
-// Function to calculate the Euclidean distance between two points
-double calculateDistance(const Point& a, const Point& b) {
+// Function to calculate the Euclidean distance between two cities
+double calculateDistance(const City& a, const City& b) {
     return sqrt(pow(a.x - b.x, 2) + pow(a.y - b.y, 2));
 }
 
 // Function to calculate the total distance of a tour
-double calculateTotalDistance(const vector<int>& tour, const vector<Point>& cities) {
+double calculateTotalDistance(const vector<int>& tour, const vector<City>& cities) {
     double distance = 0.0;
     int n = tour.size();
     for (int i = 0; i < n - 1; ++i) {
@@ -41,7 +42,7 @@ vector<int> generateRandomTour(int n) {
 }
 
 // Function to perform Simulated Annealing
-vector<int> simulatedAnnealing(const vector<Point>& cities, double initialTemperature,
+vector<int> simulatedAnnealing(const vector<City>& cities, double initialTemperature,
                                double coolingRate, int maxIterations) {
     srand(time(nullptr));
 
@@ -80,15 +81,19 @@ vector<int> simulatedAnnealing(const vector<Point>& cities, double initialTemper
 }
 
 // Function to read cities from a file
-vector<Point> readCitiesFromFile(const string& filename) {
-    vector<Point> cities;
+vector<City> readCitiesFromFile(const string& filename) {
+    vector<City> cities;
     ifstream file(filename);
     if (file.is_open()) {
-        double x, y;
-        while (file >> x >> y) {
-            Point point = {x,y};
-            cities.push_back(point);
+        int numCities;
+        file >> numCities;
+
+        for (int i = 0; i < numCities; ++i) {
+            City city;
+            file >> city.name >> city.x >> city.y;
+            cities.push_back(city);
         }
+
         file.close();
     } else {
         cerr << "Unable to open file: " << filename << endl;
@@ -97,8 +102,8 @@ vector<Point> readCitiesFromFile(const string& filename) {
 }
 
 int main() {
-    // Example file format: "cities.txt" with x and y coordinates
-    vector<Point> cities = readCitiesFromFile("miasta");
+    // Example file format: "cities.txt" with the number of cities and city information
+    vector<City> cities = readCitiesFromFile("cities.txt");
 
     int numCities = cities.size();
 
@@ -112,8 +117,8 @@ int main() {
 
     // Output the results
     cout << "Best Tour: ";
-    for (int city : bestTour) {
-        cout << city << " ";
+    for (int cityIndex : bestTour) {
+        cout << cities[cityIndex].name << " ";
     }
     cout << "\nBest Distance: " << calculateTotalDistance(bestTour, cities) << endl;
 
