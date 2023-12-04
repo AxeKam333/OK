@@ -1,0 +1,5 @@
+berlin52.txt 8980.92
+grupa7_1.txt 4914.29
+grupa7_2.txt 7840.91
+olek123 9907.36
+olek321 7330.55
