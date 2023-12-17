@@ -8,11 +8,9 @@
 #include <ctime>
 #include <random>
 
-const int Maxsize=1000;
+const int Maxsize = 1000;
 
 using namespace std;
-
-
 
 struct City
 {
@@ -20,25 +18,26 @@ struct City
     int x, y;
 };
 
-
-
 double calculateDistance(const City &a, const City &b)
 {
     return sqrt(pow(a.x - b.x, 2) + pow(a.y - b.y, 2));
 }
 
-void calculateDistanceTable(const vector<City> &cities, double DistanceTable[][Maxsize],int size){
-    
-    for(int i=0; i<size;i++){
-        for(int j=0;j<size;j++){
-            DistanceTable[i][j]=calculateDistance(cities[i],cities[j]);
+void calculateDistanceTable(const vector<City> &cities, double DistanceTable[][Maxsize], int size)
+{
+
+    for (int i = 0; i < size; i++)
+    {
+        for (int j = 0; j < size; j++)
+        {
+            DistanceTable[i][j] = calculateDistance(cities[i], cities[j]);
         }
     }
-    
 }
 
-double calculateDistance(const City &a, const City &b, double DistanceTable[][Maxsize]){
-    return DistanceTable[a.name-1][b.name-1];
+double calculateDistance(const City &a, const City &b, double DistanceTable[][Maxsize])
+{
+    return DistanceTable[a.name - 1][b.name - 1];
 }
 
 double calculateTotalDistance(const vector<int> &tour, const vector<City> &cities)
@@ -53,27 +52,6 @@ double calculateTotalDistance(const vector<int> &tour, const vector<City> &citie
     return distance;
 }
 
-double calculateDistanceDifference(const vector<int> &tour,const vector<int> &newTour, const vector<City> &cities, int swaps[], int swapNumber){
-    double distance = 0.0;
-  
-    for(int i = 0; i<swapNumber; i++){
-        distance -= calculateDistance(cities[tour[swaps[i]-1]],cities[tour[swaps[i]]]);
-        distance -= calculateDistance(cities[tour[swaps[i]]],cities[tour[swaps[i]+1]]);
-        
-    }
-    
-    for(int i = 0; i<swapNumber; i++){
-        distance += calculateDistance(cities[newTour[swaps[i]-1]],cities[newTour[swaps[i]]]);
-        distance += calculateDistance(cities[newTour[swaps[i]]],cities[newTour[swaps[i]+1]]);
-    }
-
-    return distance;
-
-}
-
-
-
-
 vector<int> generateRandomTour(int n)
 {
     vector<int> tour(n);
@@ -81,13 +59,41 @@ vector<int> generateRandomTour(int n)
     {
         tour[i] = i;
     }
-    shuffle(tour.begin() + 1, tour.end(), std::default_random_engine(std::random_device()()));
+    shuffle(tour.begin() + 1, tour.end(), default_random_engine(random_device()()));
     return tour;
+}
+
+pair<vector<int>, double> swapCities(const vector<int> &tour, double currentDistance, const vector<City> &cities, int n, int swapNumber)
+{
+    vector<int> newTour = tour;
+    int swaps[swapNumber];
+
+    for(int i=0; i<swapNumber/2;i++){
+        swaps[i*2] = rand() % (n - 1) + 1;
+        swaps[i*2+1] = rand() % (n - 1) + 1;
+        swap(newTour[swaps[i*2]], newTour[swaps[i*2+1]]);
+    }
+        swaps[swapNumber-1] = rand() % (n - 1) + 1;
+        swap(newTour[swaps[swapNumber-1]], newTour[swaps[0]]);
+
+    double newDistance = 0.0;
+
+    for (int i = 0; i < swapNumber; i++)
+    {
+        newDistance -= calculateDistance(cities[tour[swaps[i] - 1]], cities[tour[swaps[i]]]);
+        newDistance -= calculateDistance(cities[tour[swaps[i]]], cities[tour[swaps[i] + 1]]);
+
+        newDistance += calculateDistance(cities[newTour[swaps[i] - 1]], cities[newTour[swaps[i]]]);
+        newDistance += calculateDistance(cities[newTour[swaps[i]]], cities[newTour[swaps[i] + 1]]);
+    }
+
+    return make_pair(newTour, newDistance);
 }
 
 vector<int> simulatedAnnealing(const vector<City> &cities, double initialTemperature,
                                double coolingRate, int maxIterations)
 {
+    time_t startTime = time(nullptr);
     srand(time(nullptr));
 
     int n = cities.size();
@@ -97,28 +103,35 @@ vector<int> simulatedAnnealing(const vector<City> &cities, double initialTempera
     double currentDistance = calculateTotalDistance(currentTour, cities);
     double bestDistance = currentDistance;
 
-    for (int iteration = 0; iteration < maxIterations; ++iteration)
+    for (int swapNumber = 2; swapNumber <= n / 2; swapNumber++)
     {
-        double temperature = initialTemperature * exp(-coolingRate * iteration);
-
-        vector<int> newTour = currentTour;
-        int pos1 = rand() % (n - 1) + 1; 
-        int pos2 = rand() % (n - 1) + 1;
-        swap(newTour[pos1], newTour[pos2]);
-        int swaps[] = {pos1,pos2};
-
-        double newDistance = calculateDistanceDifference(currentTour,newTour, cities,swaps,2)+currentDistance; //policzyć zmienione krawędzie, zamiast od nowa
-        
-        if (newDistance < currentDistance || (rand() / (RAND_MAX + 1.0)) < exp((currentDistance - newDistance) / temperature))
+        for (int iteration = 0; iteration < maxIterations; ++iteration)
         {
-            currentTour = newTour;
-            currentDistance = newDistance;
-        }
+            double temperature = initialTemperature * exp(-coolingRate * iteration);
 
-        if (currentDistance < bestDistance)
-        {
-            bestTour = currentTour;
-            bestDistance = currentDistance;
+            vector<int> newTour;
+            double newDistance;
+            tie(newTour, newDistance) = swapCities(currentTour, currentDistance, cities, n, swapNumber);
+
+            if (newDistance < currentDistance || (rand() / (RAND_MAX + 1.0)) < exp((currentDistance - newDistance) / temperature))
+            {
+                currentTour = newTour;
+                currentDistance = newDistance;
+            }
+
+            if (currentDistance < bestDistance)
+            {
+                bestTour = currentTour;
+                bestDistance = currentDistance;
+            }
+
+            time_t currentTime = time(nullptr);
+            double elapsedMinutes = difftime(currentTime, startTime) / 60.0;
+            if (elapsedMinutes >= 5.0)
+            {
+                cout << "Czas upłynął." << endl;
+                return bestTour;
+            }
         }
     }
 
@@ -150,20 +163,20 @@ vector<City> readCitiesFromFile(const string &filename)
     return cities;
 }
 
-int main(int argc, char *argsv[]){
+int main(int argc, char *argsv[])
+{
 
     string name = "berlin52";
     if (argc > 1)
         name = argsv[1];
 
-    vector<City> cities = readCitiesFromFile("./tests/"+name+".txt");
+    vector<City> cities = readCitiesFromFile("./tests/" + name + ".txt");
 
     int numCities = cities.size();
 
-    double DistanceTable[Maxsize][Maxsize]={};
-    calculateDistanceTable(cities,DistanceTable,numCities);
-    cout<<DistanceTable[999][3]<<endl;
-    
+    double DistanceTable[Maxsize][Maxsize] = {};
+    calculateDistanceTable(cities, DistanceTable, numCities);
+    cout << DistanceTable[999][3] << endl;
 
     double initialTemperature = 100000.0;
     double coolingRate = 0.00003;
