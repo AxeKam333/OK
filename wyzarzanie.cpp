@@ -68,23 +68,39 @@ pair<vector<int>, double> swapCities(const vector<int> &tour, double currentDist
     vector<int> newTour = tour;
     int swaps[swapNumber];
 
-    for(int i=0; i<swapNumber/2;i++){
-        swaps[i*2] = rand() % (n - 1) + 1;
-        swaps[i*2+1] = rand() % (n - 1) + 1;
-        swap(newTour[swaps[i*2]], newTour[swaps[i*2+1]]);
+    for (int i = 0; i < swapNumber / 2; i++)
+    {
+        swaps[i * 2] = rand() % (n - 1) + 1;
+        swaps[i * 2 + 1] = rand() % (n - 1) + 1;
+        swap(newTour[swaps[i * 2]], newTour[swaps[i * 2 + 1]]);
     }
-        swaps[swapNumber-1] = rand() % (n - 1) + 1;
-        swap(newTour[swaps[swapNumber-1]], newTour[swaps[0]]);
+    swaps[swapNumber - 1] = rand() % (n - 1) + 1;
+    swap(newTour[swaps[swapNumber - 1]], newTour[swaps[0]]);
 
     double newDistance = 0.0;
 
     for (int i = 0; i < swapNumber; i++)
     {
-        newDistance -= calculateDistance(cities[tour[swaps[i] - 1]], cities[tour[swaps[i]]]);
-        newDistance -= calculateDistance(cities[tour[swaps[i]]], cities[tour[swaps[i] + 1]]);
-
-        newDistance += calculateDistance(cities[newTour[swaps[i] - 1]], cities[newTour[swaps[i]]]);
-        newDistance += calculateDistance(cities[newTour[swaps[i]]], cities[newTour[swaps[i] + 1]]);
+        if (swaps[i] == 0)
+        {
+            newDistance -= calculateDistance(cities[tour[n - 1]], cities[tour[0]]);
+            newDistance += calculateDistance(cities[newTour[n - 1]], cities[newTour[0]]);
+        }
+        else
+        {
+            newDistance -= calculateDistance(cities[tour[swaps[i] - 1]], cities[tour[swaps[i]]]);
+            newDistance += calculateDistance(cities[newTour[swaps[i] - 1]], cities[newTour[swaps[i]]]);
+            if (swaps[i] + 1 == n)
+            {
+                newDistance -= calculateDistance(cities[tour[swaps[i]]], cities[tour[0]]);
+                newDistance += calculateDistance(cities[newTour[swaps[i]]], cities[newTour[0]]);
+            }
+            else
+            {
+                newDistance -= calculateDistance(cities[tour[swaps[i]]], cities[tour[swaps[i] + 1]]);
+                newDistance += calculateDistance(cities[newTour[swaps[i]]], cities[newTour[swaps[i] + 1]]);
+            }
+        }
     }
 
     return make_pair(newTour, newDistance);
@@ -111,6 +127,7 @@ vector<int> simulatedAnnealing(const vector<City> &cities, double initialTempera
 
             vector<int> newTour;
             double newDistance;
+
             tie(newTour, newDistance) = swapCities(currentTour, currentDistance, cities, n, swapNumber);
 
             if (newDistance < currentDistance || (rand() / (RAND_MAX + 1.0)) < exp((currentDistance - newDistance) / temperature))
@@ -127,7 +144,7 @@ vector<int> simulatedAnnealing(const vector<City> &cities, double initialTempera
 
             time_t currentTime = time(nullptr);
             double elapsedMinutes = difftime(currentTime, startTime) / 60.0;
-            if (elapsedMinutes >= 5.0)
+            if (elapsedMinutes >= 1)
             {
                 cout << "Czas upłynął." << endl;
                 return bestTour;
@@ -176,11 +193,10 @@ int main(int argc, char *argsv[])
 
     double DistanceTable[Maxsize][Maxsize] = {};
     calculateDistanceTable(cities, DistanceTable, numCities);
-    cout << DistanceTable[999][3] << endl;
 
     double initialTemperature = 100000.0;
     double coolingRate = 0.00003;
-    int maxIterations = 1000000;
+    int maxIterations = 100000;
 
     vector<int> bestTour = simulatedAnnealing(cities, initialTemperature, coolingRate, maxIterations);
 
