@@ -8,7 +8,7 @@
 #include <ctime>
 #include <random>
 
-const int Maxsize = 100;
+const int Maxsize = 1000;
 
 using namespace std;
 
@@ -35,37 +35,37 @@ void calculateDistanceTable(const vector<City> &cities, double **DistanceTable, 
     }
 }
 
-double calculateDistance(const City &a, const City &b, double DistanceTable[][Maxsize])
+double calculateTabDistance(const City &a, const City &b, double **DistanceTable)
 {
     return DistanceTable[a.name - 1][b.name - 1];
 }
 
-double calculateTotalDistance(const vector<int> &tour, const vector<City> &cities)
+double calculateTotalDistance(const vector<int> &tour, const vector<City> &cities, double **DistanceTable)
 {
     double distance = 0.0;
     int n = tour.size();
     for (int i = 0; i < n - 1; ++i)
     {
-        distance += calculateDistance(cities[tour[i]], cities[tour[i + 1]]);
+        distance += calculateTabDistance(cities[tour[i]], cities[tour[i + 1]], DistanceTable);
     }
-    distance += calculateDistance(cities[tour[n - 1]], cities[tour[0]]); // Return to the starting city
+    distance += calculateTabDistance(cities[tour[n - 1]], cities[tour[0]], DistanceTable); // Return to the starting city
     return distance;
 }
 
-double calculateDistanceDifference(const vector<int> &tour, const vector<int> &newTour, const vector<City> &cities, int swaps[], int swapNumber)
+double calculateDistanceDifference(const vector<int> &tour, const vector<int> &newTour, const vector<City> &cities, int swaps[], int swapNumber, double **DistanceTable)
 {
     double distance = 0.0;
 
     for (int i = 0; i < swapNumber; i++)
     {
-        distance -= calculateDistance(cities[tour[swaps[i] - 1]], cities[tour[swaps[i]]]);
-        distance -= calculateDistance(cities[tour[swaps[i]]], cities[tour[swaps[i] + 1]]);
+        distance -= calculateTabDistance(cities[tour[swaps[i] - 1]], cities[tour[swaps[i]]], DistanceTable);
+        distance -= calculateTabDistance(cities[tour[swaps[i]]], cities[tour[swaps[i] + 1]], DistanceTable);
     }
 
     for (int i = 0; i < swapNumber; i++)
     {
-        distance += calculateDistance(cities[newTour[swaps[i] - 1]], cities[newTour[swaps[i]]]);
-        distance += calculateDistance(cities[newTour[swaps[i]]], cities[newTour[swaps[i] + 1]]);
+        distance += calculateTabDistance(cities[newTour[swaps[i] - 1]], cities[newTour[swaps[i]]], DistanceTable);
+        distance += calculateTabDistance(cities[newTour[swaps[i]]], cities[newTour[swaps[i] + 1]], DistanceTable);
     }
 
     return distance;
@@ -82,7 +82,7 @@ vector<int> generateRandomTour(int n)
     return tour;
 }
 
-vector<int> generateGreedyTour(const vector<City> &cities)
+vector<int> generateGreedyTour(const vector<City> &cities, double **DistanceTable)
 {
     int n = cities.size();
     vector<bool> visited(n, false);
@@ -102,7 +102,7 @@ vector<int> generateGreedyTour(const vector<City> &cities)
         {
             if (!visited[i])
             {
-                double distance = calculateDistance(cities[currentCityIndex], cities[i]);
+                double distance = calculateTabDistance(cities[currentCityIndex], cities[i], DistanceTable);
                 if (distance < minDistance)
                 {
                     minDistance = distance;
@@ -120,15 +120,15 @@ vector<int> generateGreedyTour(const vector<City> &cities)
 }
 
 vector<int> simulatedAnnealing(const vector<City> &cities, double initialTemperature,
-                               double coolingRate, int maxIteration, int maxTimeSeconds)
+                               double coolingRate, int maxIteration, int maxTimeSeconds, double **DistanceTable)
 {
     srand(time(nullptr));
     clock_t startTime = clock();
     int n = cities.size();
-    vector<int> currentTour = generateGreedyTour(cities);
+    vector<int> currentTour = generateGreedyTour(cities, DistanceTable);
     vector<int> bestTour = currentTour;
 
-    double currentDistance = calculateTotalDistance(currentTour, cities);
+    double currentDistance = calculateTotalDistance(currentTour, cities, DistanceTable);
     double bestDistance = currentDistance;
     int swap_number = 2;
     // for (int swap_number = 2; swap_number < n; swap_number++)
@@ -150,7 +150,7 @@ vector<int> simulatedAnnealing(const vector<City> &cities, double initialTempera
             }
             swap(newTour[0], newTour[swap_number]);
 
-            double newDistance = calculateDistanceDifference(currentTour, newTour, cities, swaps, swap_number) + currentDistance; // policzyć zmienione krawędzie, zamiast od nowa
+            double newDistance = calculateDistanceDifference(currentTour, newTour, cities, swaps, swap_number, DistanceTable) + currentDistance; // policzyć zmienione krawędzie, zamiast od nowa
 
             if (newDistance < currentDistance || (rand() / (RAND_MAX + 1.0)) < exp((currentDistance - newDistance) / temperature))
             {
@@ -205,17 +205,22 @@ vector<City> readCitiesFromFile(const string &filename)
 int main(int argc, char *argsv[])
 {
 
-    string name = "grupa7_1";
+    string name = "berlin52";
     if (argc > 1)
         name = argsv[1];
 
     vector<City> cities = readCitiesFromFile("../tests/" + name + ".txt");
 
     int numCities = cities.size();
+    if (numCities > Maxsize)
+    {
+        cerr << "Too many cities" << endl;
+        return 1;
+    }
 
-    double **DistanceTable = new double* [Maxsize];
-    for (int i = 0; i < Maxsize; i++)
-        DistanceTable[i] = new double[Maxsize];
+    double **DistanceTable = new double* [numCities];
+    for (int i = 0; i < numCities; i++)
+        DistanceTable[i] = new double[numCities];
 
     // double DistanceTable[Maxsize][Maxsize] = {};
     calculateDistanceTable(cities, DistanceTable, numCities);
@@ -233,14 +238,14 @@ int main(int argc, char *argsv[])
     cout<<"maxIterations: "<<maxIterations<<endl;
     cout<<"timeSeconds: "<<timeSeconds<<endl;
 
-    vector<int> bestTour = simulatedAnnealing(cities, initialTemperature, coolingRate, maxIterations, timeSeconds);
+    vector<int> bestTour = simulatedAnnealing(cities, initialTemperature, coolingRate, maxIterations, timeSeconds, DistanceTable);
 
     cout << "Best Tour: ";
     for (int cityIndex : bestTour)
     {
         cout << cities[cityIndex].name << " ";
     }
-    cout << "\nBest Distance: " << calculateTotalDistance(bestTour, cities) << endl;
+    cout << "\nBest Distance: " << calculateTotalDistance(bestTour, cities,DistanceTable) << endl;
 
     return 0;
 }
