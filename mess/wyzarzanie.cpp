@@ -137,7 +137,7 @@ vector<int> simulatedAnnealing(const vector<City> &cities, double initialTempera
         int swaps[swap_number];
         for (int iteration = 0; iteration < maxIteration; ++iteration)
         {
-            cout<<"iteration: "<<iteration<<endl;
+            // cout<<"iteration: "<<iteration<<endl;
             double temperature = initialTemperature * exp(-coolingRate * iteration);
 
             vector<int> newTour = currentTour;
@@ -148,7 +148,7 @@ vector<int> simulatedAnnealing(const vector<City> &cities, double initialTempera
             {
                 swap(newTour[swaps[i]], newTour[swaps[i + 1]]);
             }
-            swap(newTour[0], newTour[swap_number]);
+            // swap(newTour[0], newTour[swap_number]);
 
             double newDistance = calculateDistanceDifference(currentTour, newTour, cities, swaps, swap_number, DistanceTable) + currentDistance; // policzyć zmienione krawędzie, zamiast od nowa
 
@@ -224,14 +224,21 @@ int main(int argc, char *argsv[])
 
     // double DistanceTable[Maxsize][Maxsize] = {};
     calculateDistanceTable(cities, DistanceTable, numCities);
+    for (int i = 0; i < numCities; i++){
+         for (int j = 0; j < numCities; j++)
+            cout << DistanceTable[i][j] << " ";
+        cout << endl;
+    }
+       
+        
 
     cout << "origin" << endl;
 
     double initialTemperature = 1000000.0;
-    double coolingRate = 0.000003;
-    int maxIterations = 10000000;
+    double coolingRate = 0.0000003;
+    int maxIterations = 100000000;
 
-    int timeSeconds = 30;
+    int timeSeconds = 180;
 
     cout<<"initialTemperature: "<<initialTemperature<<endl;
     cout<<"coolingRate: "<<coolingRate<<endl;
