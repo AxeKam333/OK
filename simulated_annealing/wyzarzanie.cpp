@@ -8,14 +8,14 @@
 #include <ctime>
 #include <random>
 
-const int Maxsize = 1000;
+const int Maxsize = 15000;
 
 using namespace std;
 
 struct City
 {
     int name;
-    int x, y;
+    double x, y;
 };
 
 double calculateDistance(const City &a, const City &b)
@@ -129,6 +129,7 @@ vector<int> simulatedAnnealing(const vector<City> &cities, double initialTempera
     vector<int> bestTour = currentTour;
 
     double currentDistance = calculateTotalDistance(currentTour, cities, DistanceTable);
+    cout<<"geedy distance: "<<currentDistance<<endl;
     double bestDistance = currentDistance;
     int swap_number = 2;
     // for (int swap_number = 2; swap_number < n; swap_number++)
@@ -224,14 +225,12 @@ int main(int argc, char *argsv[])
 
     // double DistanceTable[Maxsize][Maxsize] = {};
     calculateDistanceTable(cities, DistanceTable, numCities);
-    for (int i = 0; i < numCities; i++){
-         for (int j = 0; j < numCities; j++)
-            cout << DistanceTable[i][j] << " ";
-        cout << endl;
-    }
+    // for (int i = 0; i < numCities; i++){
+    //      for (int j = 0; j < numCities; j++)
+    //         cout << DistanceTable[i][j] << " ";
+    //     cout << endl;
+    // }
        
-        
-
     cout << "origin" << endl;
 
     double initialTemperature = 1000000.0;
